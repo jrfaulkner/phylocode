@@ -1,0 +1,21 @@
+seed(42)
+
+# Get taxa for simulating (100 names and dates of the real taxa)
+taxa = readTaxonData("data/reduced_taxa.txt"," ")
+
+# Draw tree
+psi ~ dnHeterochronousCoalescent(75000,taxa)
+
+# Save tree
+write(psi,filename="data/constant_population.tre")
+
+# Substitution model
+clock_rate <- 5.38e-7
+
+Q <- fnJC(4)
+
+seq ~ dnPhyloCTMC(tree=psi,branchRates=clock_rate,Q=Q,nSites=500)
+
+writeNexus("data/constant_population.nex",seq)
+
+q()

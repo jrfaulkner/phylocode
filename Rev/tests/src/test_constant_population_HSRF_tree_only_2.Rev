@@ -1,0 +1,119 @@
+seed(53)
+
+###------------------------------
+##          Data 
+###------------------------------
+
+tree <- readTrees("data/constant_population.tre")[1]
+
+root_height <- 150000  #this is edge of infinite grid cell -- shapiro paper est 136k (111k to 164k)
+
+### Read in taxa
+taxa = readTaxonData("data/reduced_taxa.txt"," ")
+num_taxa = taxa.size()
+
+###-------------------------------
+##          Set Grid    
+###-------------------------------
+
+# set my move index
+mi = 0
+
+# set move index for up-down moves
+miud = 0
+
+# define number of population sizes through time
+NUM_INTERVALS = 99 + 1
+NIM1 = NUM_INTERVALS - 1
+
+# Chop up duration from root to present into equally sized intervals
+interval_times <- root_height * seq(1, NIM1, 1)/NIM1
+
+######################################
+# Define population sizes and priors #
+######################################
+
+
+zeta <- 0.005
+gamma ~ dnHalfCauchy(0, 1)
+
+gamma.setValue(runif(1, 0.05, 0.5)[1])
+
+print("got past sig model", "\n")
+
+
+# Prior on population size at the present (diffuse)
+zlog_Ne1 ~ dnNormal(0, 1)
+
+zlog_Ne1.setValue(rnorm(1,0,.1)[1])
+
+moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=0.2,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
+
+print("got to Ne model", "\n")
+
+# Start accumulating vector of population sizes
+
+Ne[1] := exp(10.7 + 5*zlog_Ne1)
+
+# Flesh out the population sizes with skyride model
+for (i in 1:(NUM_INTERVALS-1)) {
+    index = i+1
+    
+    # make a HSRF local shrinkage variable
+    sigma[i] ~ dnHalfCauchy(0,1)
+    
+    # specify normal priors on the difference between sequential population sizes
+    # we use a non-centralized parameterization
+    delta_logNe[i] ~ dnNormal( mean=0, sd=sigma[i]*gamma*zeta )
+    
+    # calculate population size in interval
+    Ne[index] := Ne[i] * exp(delta_logNe[i])
+
+}
+
+
+moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=0.6,tune=false)
+moves[++mi] = mvHSRFHyperpriorsGibbs(gamma, sigma, delta_logNe, zeta, weight=0.2)
+
+############################
+# Coalescent prior on tree #
+############################
+
+print("got to tree model", "\n")
+
+# Define our model
+psi ~ dnHeterochronousCoalescentSkyline(theta   = Ne, times   = interval_times,  method  = "specified", taxa   = taxa)
+
+psi.clamp(tree)
+
+#############
+# The Model #
+#############
+
+### workspace model wrapper ###
+mymodel = model(Ne)
+
+### set up the monitors that will output parameter values to file and screen 
+mni = 0
+monitors[++mni] = mnModel(filename="output/HSRF_test_fixed_tree_constant_population_2.log",printgen=100, separator = TAB)
+monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],gamma)
+
+################
+# The Analysis #
+################
+
+### workspace mcmc ###
+mymcmc = mcmc(mymodel, monitors, moves)
+
+### pre-burnin to tune the proposals ###
+mymcmc.burnin(generations=10000,tuningInterval=1e3)
+mymcmc.operatorSummary()
+
+### run the MCMC ###
+mymcmc.run(generations=100000)
+mymcmc.operatorSummary()
+
+
+
+## quit ##
+q()

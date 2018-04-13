@@ -1,0 +1,190 @@
+seed(45)
+
+# The BEAST script has a total move weight of 75, distributed as
+# 30 = 40%   pure node height
+# 15 = 20%   mostly node-height but also tree moves (subtree slide)
+# 21 = 28%   tree moves
+# 3  = 4.0%  root height
+# 1 ~= 1.3%  kappa
+# 1 ~= 1.3%  base frequencies
+# 1 ~= 1.3%  gamma shape parameter
+# 3  = 4.0%  coalescent parameters
+
+# Here we will allocate
+# 40%   pure node height
+# 20%   mostly node-height but also tree moves (subtree slide)
+# 28%   tree moves
+# 4.0%  root height
+# 1.0%  kappa
+# 1.0%  base frequencies
+# 1.0%  gamma shape parameter
+# 5.0%  coalescent parameters (3.0% delta thetas, 1.0% hyperpriors, 1.0% first population size
+
+###------------------------------
+##          Data 
+###------------------------------
+
+### Read in the sequence alignment
+data <- readDiscreteCharacterData("data/bison_2013.nexus")
+
+num_taxa <- data.ntaxa()
+root_height <- 150000  #this is edge of infinite grid cell -- shapiro paper est 136k (111k to 164k)
+
+### Read in taxa
+taxa = readTaxonData("data/bison_2013_taxa.txt"," ")
+num_taxa = taxa.size()
+
+###-------------------------------
+##          Set Grid    
+###-------------------------------
+
+# set my move index
+mi = 0
+
+# set move index for up-down moves
+miud = 0
+
+# define number of population sizes through time
+NUM_INTERVALS = 99 + 1
+NIM1 = NUM_INTERVALS - 1
+
+# Chop up duration from root to present into equally sized intervals
+interval_times <- root_height * seq(1, NIM1, 1)/NIM1
+
+######################################
+# Define population sizes and priors #
+######################################
+
+
+zeta <- 0.005
+zsig ~ dnHalfCauchy(0, 1)
+
+zsig.setValue(runif(1, 0.05, 0.5)[1])
+
+print("got past sig model", "\n")
+
+
+sig := zsig*zeta
+
+
+# Prior on population size at the present (diffuse)
+zlog_Ne1 ~ dnNormal(0, 1)
+
+zlog_Ne1.setValue(rnorm(1,0,.1)[1])
+
+moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=1.0/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
+
+print("got to Ne model", "\n")
+
+# Start accumulating vector of population sizes
+
+Ne[1] := exp(10.7 + 5*zlog_Ne1)
+
+# Flesh out the population sizes with skyride model
+for (i in 1:(NUM_INTERVALS-1)) {
+    index = i+1
+    
+    # specify normal priors on the difference between sequential population sizes
+    # we use a non-centralized parameterization
+    delta_logNe[i] ~ dnNormal( mean=0, sd=sig )
+    
+    # calculate population size in interval
+    Ne[index] := Ne[i] * exp(delta_logNe[i])
+
+}
+
+
+moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=3.0/100.0,tune=false)
+moves[++mi] = mvGMRFHyperpriorGibbs(zsig, delta_logNe, zeta, weight=1.0/100.0)
+
+############################
+# Coalescent prior on tree #
+############################
+
+print("got to tree model", "\n")
+
+# Define our model
+psi ~ dnHeterochronousCoalescentSkyline(theta   = Ne, times   = interval_times,  method  = "specified", taxa   = taxa)
+
+## Tree proposals
+# Moves on node times (excluding root height)
+moves[++mi] = mvNodeTimeSlideUniform(psi, weight=20.0/100.0)
+moves[++mi] = mvNodeTimeScale(psi, weight=20.0/100.0)
+moves[++mi] = mvSubtreeScale(psi, weight=20.0/100.0)
+
+# Moves on root height
+moves[++mi] = mvRootTimeScaleBactrian(psi, weight=4.0/100.0)
+
+# Moves on tree topology
+total_tree_weight_BEAST = 28
+moves[++mi] = mvNarrow(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
+moves[++mi] = mvNNI(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
+moves[++mi] = mvFNPR(psi, weight=168.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
+
+TL := psi.treeLength()
+RA := psi.rootAge()
+
+######################
+# Substitution model #
+######################
+
+print("got to sub model", "\n")
+
+# Prior on kappa
+kappa ~ dnGamma(shape=10,rate=1/3)
+moves[++mi] = mvScaleBactrian(kappa, weight=1.0/100.0, lambda=1.0, tune=true, tuneTarget=0.44)
+
+# Prior on stationary frequencies
+pi ~ dnDirichlet(v(1,1,1,1))
+moves[++mi] = mvBetaSimplex(pi, weight=0.75/100.0, alpha=1, tune=true)
+moves[++mi] = mvDirichletSimplex(pi, alpha=1, weight=0.25/100.0, tune=true) 
+
+# Wrap up kappa and pi into HKY model
+Q := fnHKY(kappa, pi)
+
+
+clock_rate <- 5.38e-7
+
+# Gamma-distributed rate heterogeneity
+# Prior on shape
+gamma_shape ~ dnGamma(shape=3.25,rate=1/0.06)
+moves[++mi] = mvScaleBactrian(gamma_shape, weight=1.0/100.0, lambda=1.0, tune=true, tuneTarget=0.44)
+
+gamma_cats := fnDiscretizeGamma(gamma_shape, gamma_shape, 4)
+
+#############
+# The Model #
+#############
+
+seq ~ dnPhyloCTMC(tree=psi, Q=Q, branchRates=clock_rate, siteRates = gamma_cats, nSites=data.nchar())
+
+seq.clamp(data)
+
+### workspace model wrapper ###
+mymodel = model(Ne)
+
+### set up the monitors that will output parameter values to file and screen 
+mni = 0
+monitors[++mni] = mnModel(filename="output/bison_skygrid_fixed_clock_4.log",printgen=10000, separator = TAB)
+monitors[++mni] = mnFile(filename="output/bison_skygrid_4.trees",printgen=10000, separator = TAB, psi)
+monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],sig)
+
+################
+# The Analysis #
+################
+
+### workspace mcmc ###
+mymcmc = mcmc(mymodel, monitors, moves)
+
+### pre-burnin to tune the proposals ###
+mymcmc.burnin(generations=50000000,tuningInterval=1e5) #50 million, or 10% of the length of the chain we want
+mymcmc.operatorSummary()
+
+### run the MCMC ###
+mymcmc.run(generations=500000000)  #500 million
+mymcmc.operatorSummary()
+
+
+
+## quit ##
+q()
