@@ -1,0 +1,28 @@
+# Call Rev from /Rev, filepaths are from there
+seed(42)
+
+datasets <- v("bottleneck","mex_hat","broken_exponential","GP")
+
+for (i in 1:4) {
+	
+	psi <- readTrees("full_model/data/" + datasets[i] + ".tre")[1]
+
+	# Substitution model
+	# choose a clock rate that produces a tree with similar number of mutations per site as real dataset
+	clock_rate <- 0.9279868/psi.treeLength()
+
+	Q <- fnJC(4)
+
+	seq ~ dnPhyloCTMC(tree=psi,branchRates=clock_rate,Q=Q,nSites=500)
+
+	writeNexus("full_model/data/" + datasets[i] + ".nex",seq)
+	
+	clock_rates[i] <- clock_rate
+	
+}
+
+write(clock_rates[1],"\n",filename="setup/simulated_clock_rates.txt")
+for (i in 2:4) {
+	write(clock_rates[i],"\n",filename="setup/simulated_clock_rates.txt",append=true)
+}
+q()

@@ -1,0 +1,7 @@
+aln = readDiscreteCharacterData("data/bison_2013.nexus")
+aln.methods()
+aln
+readDiscreteCharacterData("data/bison_2013.nexus")
+readDiscreteCharacterData("data/bison_2013.nexus").getNumInvariantSites()
+tree <- readTrees(
+)

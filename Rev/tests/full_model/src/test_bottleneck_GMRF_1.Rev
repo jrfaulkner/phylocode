@@ -1,17 +1,16 @@
-seed(THISSEED)
+seed(42)
 
 ###------------------------------
 ##          Data 
 ###------------------------------
 
 ### Read in the sequence alignment
-data <- readDiscreteCharacterData("data/THISALN.nex")
+data <- readDiscreteCharacterData("data/bottleneck.nex")
 
-num_taxa <- data.ntaxa()
-grid_end <- THISGRID  #this is edge of infinite grid cell
+grid_end <- 8.5  #this is edge of infinite grid cell
 
 ### Read in taxa
-taxa = readTaxonData("data/THISALN.taxa.txt"," ")
+taxa = readTaxonData("data/bottleneck.taxa.txt"," ")
 num_taxa = taxa.size()
 
 ###-------------------------------
@@ -37,15 +36,18 @@ interval_times <- grid_end * seq(1, NIM1, 1)/NIM1
 
 
 zeta <- 0.005
-gamma ~ dnHalfCauchy(0, 1)
+zsig ~ dnHalfCauchy(0, 1)
 
-gamma.setValue(runif(1, 0.05, 0.5)[1])
+zsig.setValue(runif(1, 0.05, 0.5)[1])
 
 print("got past sig model", "\n")
 
 
+sig := zsig*zeta
+
+
 # Prior on population size at the present (diffuse)
-zlog_Ne1 ~ dnNormal(THISMU, 1)
+zlog_Ne1 ~ dnNormal(-0.32932704441398, 1)
 
 moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=1.0/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
 
@@ -59,12 +61,9 @@ Ne[1] := exp(10*zlog_Ne1)
 for (i in 1:(NUM_INTERVALS-1)) {
     index = i+1
     
-    # make a HSRF local shrinkage variable
-    sigma[i] ~ dnHalfCauchy(0,1)
-    
     # specify normal priors on the difference between sequential population sizes
     # we use a non-centralized parameterization
-    delta_logNe[i] ~ dnNormal( mean=0, sd=sigma[i]*gamma*zeta )
+    delta_logNe[i] ~ dnNormal( mean=0, sd=sig )
     
     # calculate population size in interval
     Ne[index] := Ne[i] * exp(delta_logNe[i])
@@ -73,7 +72,7 @@ for (i in 1:(NUM_INTERVALS-1)) {
 
 
 moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=3.0/100.0,tune=false)
-moves[++mi] = mvHSRFHyperpriorsGibbs(gamma, sigma, delta_logNe, zeta, weight=1.0/100.0)
+moves[++mi] = mvGMRFHyperpriorGibbs(zsig, delta_logNe, zeta, weight=1.0/100.0)
 
 ############################
 # Coalescent prior on tree #
@@ -111,7 +110,7 @@ print("got to sub model", "\n")
 # Wrap up kappa and pi into HKY model
 Q := fnJC(4)
 
-clock_rate <- THISCLOCK
+clock_rate <- 0.02326979
 
 #############
 # The Model #
@@ -126,9 +125,9 @@ mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
 mni = 0
-monitors[++mni] = mnModel(filename="output/HSRF_test_THISALN_THISREP.log",printgen=10000, separator = TAB)
-monitors[++mni] = mnFile(filename="output/HSRF_test_THISALN_THISREP.trees",printgen=10000, separator = TAB, psi)
-monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],gamma)
+monitors[++mni] = mnModel(filename="output/GMRF_test_bottleneck_1.log",printgen=10000, separator = TAB)
+monitors[++mni] = mnFile(filename="output/GMRF_test_bottleneck_1.trees",printgen=10000, separator = TAB, psi)
+monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],sig)
 
 ################
 # The Analysis #

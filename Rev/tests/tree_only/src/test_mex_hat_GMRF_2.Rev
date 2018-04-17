@@ -1,15 +1,15 @@
-seed(THISSEED)
+seed(63)
 
 ###------------------------------
 ##          Data 
 ###------------------------------
 
-tree <- readTrees("data/THISALN.tre")[1]
+tree <- readTrees("data/mex_hat.tre")[1]
 
-grid_end <- THISGRID  #this is edge of infinite grid cell
+grid_end <- 12  #this is edge of infinite grid cell
 
 ### Read in taxa
-taxa = readTaxonData("data/THISALN.taxa.txt"," ")
+taxa = readTaxonData("data/mex_hat.taxa.txt"," ")
 num_taxa = taxa.size()
 
 ###-------------------------------
@@ -46,7 +46,7 @@ sig := zsig*zeta
 
 
 # Prior on population size at the present (diffuse)
-zlog_Ne1 ~ dnNormal(THISMU, 1)
+zlog_Ne1 ~ dnNormal(-0.797093141616489, 1)
 
 moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=0.2,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
 
@@ -92,7 +92,7 @@ mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
 mni = 0
-monitors[++mni] = mnModel(filename="output/GMRF_test_fixed_tree_THISALN_THISREP.log",printgen=100, separator = TAB)
+monitors[++mni] = mnModel(filename="output/GMRF_test_fixed_tree_mex_hat_2.log",printgen=100, separator = TAB)
 monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],sig)
 
 ################

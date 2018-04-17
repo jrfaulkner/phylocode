@@ -11,6 +11,7 @@ This folder contains everything needed to run RevBayes analyses of the 2013 biso
 	/analyses/output is where the output of the analyses go
 	
 	/analyses/setup
+		
 		To generate the scripts for analysis, use /analyses/setup/generate_analysis_scripts.R 
 		
 			The number of replicate analyses can be changed by altering this file
@@ -21,10 +22,30 @@ This folder contains everything needed to run RevBayes analyses of the 2013 biso
 	
 	
 /tests contains scripts to simulate and perform basic sanity checks of the Rev implementation of the HSRF and GMRF models
-	/data contains simulated data
 	
-	/output holds the output of the analyses
+	/setup contains scripts and datafiles to simulate test datasets and write test analysis scripts
+		
+		/simtraj.r is used for simulating coalescent models (need phylofuncs.r, package phylodyn)
+		
+		/subsample_trees_for_full_Rev_test.R makes smaller versions of the full trees to use in testing the joint/full model in Rev
+		
+		/sim_seqs.Rev simulates JC69 alignments on the subsampled trees (using clock rates that correspond roughly to the substitution (MrBayes-style) tree length of the Bison data
+		
+		/generate_test_scripts.R generates the Rev scripts for analysis, uses the misc. text files to set grid ends and priors where needed in the Rev scripts
 	
-	/setup contains template scripts
-		it also contains scripts to simulate trees (and alignments on them) under two demographic models, constant-population and three epoch
-	/src contains the generated analysis scripts
+	/tree_only is for testing the Rev HSRF and GMRF implementations on fixed trees
+		
+		/data contains simulated data	
+		
+		/output holds the output of the analyses
+		
+		/src contains the generated analysis scripts
+
+	/full_model is for testing the Rev HSRF and GMRF implementations while inferring the tree
+		
+		/data contains simulated data	
+		
+		/output holds the output of the analyses
+		
+		/src contains the generated analysis scripts
+

@@ -6,10 +6,10 @@ seed(THISSEED)
 
 tree <- readTrees("data/THISALN.tre")[1]
 
-root_height <- 150000  #this is edge of infinite grid cell -- shapiro paper est 136k (111k to 164k)
+grid_end <- THISGRID  #this is edge of infinite grid cell
 
 ### Read in taxa
-taxa = readTaxonData("data/reduced_taxa.txt"," ")
+taxa = readTaxonData("data/THISALN.taxa.txt"," ")
 num_taxa = taxa.size()
 
 ###-------------------------------
@@ -27,7 +27,7 @@ NUM_INTERVALS = 99 + 1
 NIM1 = NUM_INTERVALS - 1
 
 # Chop up duration from root to present into equally sized intervals
-interval_times <- root_height * seq(1, NIM1, 1)/NIM1
+interval_times <- grid_end * seq(1, NIM1, 1)/NIM1
 
 ######################################
 # Define population sizes and priors #
@@ -43,9 +43,7 @@ print("got past sig model", "\n")
 
 
 # Prior on population size at the present (diffuse)
-zlog_Ne1 ~ dnNormal(0, 1)
-
-zlog_Ne1.setValue(rnorm(1,0,.1)[1])
+zlog_Ne1 ~ dnNormal(THISMU, 1)
 
 moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=0.2,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
 
@@ -53,7 +51,7 @@ print("got to Ne model", "\n")
 
 # Start accumulating vector of population sizes
 
-Ne[1] := exp(10.7 + 5*zlog_Ne1)
+Ne[1] := exp(10*zlog_Ne1)
 
 # Flesh out the population sizes with skyride model
 for (i in 1:(NUM_INTERVALS-1)) {
