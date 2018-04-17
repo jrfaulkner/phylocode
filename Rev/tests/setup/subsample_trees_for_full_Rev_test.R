@@ -7,7 +7,7 @@ taxa <- read.table("tree_only/data/bottlneck.taxa.txt",sep=" ",header=TRUE,strin
 keep <- round(seq(1,dim(taxa)[1],length.out=100))
 tree <- drop.tip(tree,taxa$taxon[-keep])
 
-write.tree(tree,"full_model/data/bottleneck.tre")
+write.tree(tree,"full_model/data/bottleneck.tre",digits=30)
 write.table(taxa[keep,],"full_model/data/bottleneck.taxa.txt",sep=" ",quote=FALSE,row.names=FALSE)
 
 # Thin mex hat
@@ -17,7 +17,7 @@ taxa <- read.table("tree_only/data/mex_hat.taxa.txt",sep=" ",header=TRUE,strings
 keep <- round(seq(1,dim(taxa)[1],length.out=100))
 tree <- drop.tip(tree,taxa$taxon[-keep])
 
-write.tree(tree,"full_model/data/mex_hat.tre")
+write.tree(tree,"full_model/data/mex_hat.tre",digits=30)
 write.table(taxa[keep,],"full_model/data/mex_hat.taxa.txt",sep=" ",quote=FALSE,row.names=FALSE)
 
 # Thin bottleneck
@@ -27,7 +27,7 @@ taxa <- read.table("tree_only/data/broken_exponential.taxa.txt",sep=" ",header=T
 keep <- round(seq(1,dim(taxa)[1],length.out=100))
 tree <- drop.tip(tree,taxa$taxon[-keep])
 
-write.tree(tree,"full_model/data/broken_exponential.tre")
+write.tree(tree,"full_model/data/broken_exponential.tre",digits=30)
 write.table(taxa[keep,],"full_model/data/broken_exponential.taxa.txt",sep=" ",quote=FALSE,row.names=FALSE)
 
 # Thin bottleneck
@@ -37,5 +37,5 @@ taxa <- read.table("tree_only/data/GP.taxa.txt",sep=" ",header=TRUE,stringsAsFac
 keep <- round(seq(1,dim(taxa)[1],length.out=100))
 tree <- drop.tip(tree,taxa$taxon[-keep])
 
-write.tree(tree,"full_model/data/GP.tre")
+write.tree(tree,"full_model/data/GP.tre",digits=30)
 write.table(taxa[keep,],"full_model/data/GP.taxa.txt",sep=" ",quote=FALSE,row.names=FALSE)

@@ -29,7 +29,7 @@ gene_bn <- coalsim(samp_times = samptv_bn, n_sampled = nsampv_bn,
 
 # make tree object and write it
 tree_bn <- traj2tree(gene_bn)
-write.tree(tree_bn,"../tree_only/data/bottleneck.tre")
+write.tree(tree_bn,"../tree_only/data/bottleneck.tre",digits=30)
 
 # write Revlanguage taxon file
 write.table(tree_bn$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/bottlneck.taxa.txt")
@@ -77,7 +77,7 @@ gene_mx <- coalsim(samp_times = samptv_mx, n_sampled = nsampv_mx,
 
 # make tree object and write it
 tree_mx <- traj2tree(gene_mx)
-write.tree(tree_mx,"../tree_only/data/mex_hat.tre")
+write.tree(tree_mx,"../tree_only/data/mex_hat.tre",digits=30)
 
 # write Revlanguage taxon file
 write.table(tree_mx$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/mex_hat.taxa.txt")
@@ -116,7 +116,7 @@ gene_be <- coalsim(samp_times = samptv_be, n_sampled = nsampv_be,
 
 # make tree object and write it
 tree_be <- traj2tree(gene_be)
-write.tree(tree_be,"../tree_only/data/broken_exponential.tre")
+write.tree(tree_be,"../tree_only/data/broken_exponential.tre",digits=30)
 
 # write Revlanguage taxon file
 write.table(tree_be$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/broken_exponential.taxa.txt")
@@ -195,7 +195,7 @@ gene <- coalsimGP(samp_times = samptv, n_sampled = nsampv, trajvec=trajGP, tvec=
 
 # make tree object and write it
 tree_gp <- traj2tree(gene)
-write.tree(tree_gp,"../tree_only/data/GP.tre")
+write.tree(tree_gp,"../tree_only/data/GP.tre",digits=30)
 
 # write Revlanguage taxon file
 write.table(tree_gp$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/GP.taxa.txt")
