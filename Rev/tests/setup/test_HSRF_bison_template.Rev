@@ -47,7 +47,7 @@ print("got past sig model", "\n")
 # Prior on population size at the present (diffuse)
 zlog_Ne1 ~ dnNormal(THISMU, 1)
 
-moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=1.0/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
+moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=2.0/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
 
 print("got to Ne model", "\n")
 
@@ -73,7 +73,7 @@ for (i in 1:(NUM_INTERVALS-1)) {
 
 
 moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=3.0/100.0,tune=false)
-moves[++mi] = mvHSRFHyperpriorsGibbs(gamma, sigma, delta_logNe, zeta, weight=1.0/100.0)
+moves[++mi] = mvHSRFHyperpriorsGibbs(gamma, sigma, delta_logNe, zeta, weight=2.0/100.0)
 
 ############################
 # Coalescent prior on tree #
@@ -94,7 +94,7 @@ moves[++mi] = mvSubtreeScale(psi, weight=20.0/100.0)
 moves[++mi] = mvRootTimeScaleBactrian(psi, weight=4.0/100.0)
 
 # Moves on tree topology
-total_tree_weight_BEAST = 28
+total_tree_weight_BEAST = 29
 moves[++mi] = mvNarrow(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
 moves[++mi] = mvNNI(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
 moves[++mi] = mvFNPR(psi, weight=168.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)

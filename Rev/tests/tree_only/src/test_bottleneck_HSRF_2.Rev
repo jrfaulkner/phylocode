@@ -108,7 +108,7 @@ mymcmc.burnin(generations=10000,tuningInterval=1e3)
 mymcmc.operatorSummary()
 
 ### run the MCMC ###
-mymcmc.run(generations=100000)
+mymcmc.run(generations=1000000)
 mymcmc.operatorSummary()
 
 
