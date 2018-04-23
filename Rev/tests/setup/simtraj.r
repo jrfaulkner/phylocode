@@ -28,17 +28,14 @@ gene_bn <- coalsim(samp_times = samptv_bn, n_sampled = nsampv_bn,
 		traj = bottleneck_trajB, lower_bound = 0.1, ne.max=1, ne.min=0.1, bstart=6, bend=4  )
 
 # make tree object and write it
-tree_bn <- traj2tree(gene_bn)
-write.tree(tree_bn,"../tree_only/data/bottleneck.tre",digits=30)
-
-# write Revlanguage taxon file
-write.table(tree_bn$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/bottlneck.taxa.txt")
+tree_bn <- generate_newick(gene_bn)
+write.tree(tree_bn$newick,"../tree_only/data/bottleneck.tre",digits=10)
 
 # write grid end
 cat(gend,"\n",sep="",file="grid_ends.txt")
 
 # write MLE constant-pop theta for prior specification
-mle_bn <- mean(skyLine(summarize_phylo(tree_bn))$theta)
+mle_bn <- mean(skyLine(summarize_phylo(tree_bn$newick))$theta)
 cat(mle_bn,"\n",sep="",file="const_pop_mle.txt")
 
 ####-------------------------------------------
@@ -76,17 +73,14 @@ gene_mx <- coalsim(samp_times = samptv_mx, n_sampled = nsampv_mx,
 	traj= mex_hat_traj, mf=0.4, sf=1, soff=5.5, sscale=3,  snht=0.25, bloc=5, bscale=.4, bht=.75  , lower_bound = 0.1 )
 
 # make tree object and write it
-tree_mx <- traj2tree(gene_mx)
-write.tree(tree_mx,"../tree_only/data/mex_hat.tre",digits=30)
-
-# write Revlanguage taxon file
-write.table(tree_mx$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/mex_hat.taxa.txt")
+tree_mx <- generate_newick(gene_mx)
+write.tree(tree_mx$newick,"../tree_only/data/mex_hat.tre",digits=10)
 
 # write grid end
 cat(gend,"\n",sep="",file="grid_ends.txt",append=TRUE)
 
 # write MLE constant-pop theta for prior specification
-mle_mx <- mean(skyLine(summarize_phylo(tree_mx))$theta)
+mle_mx <- mean(skyLine(summarize_phylo(tree_mx$newick))$theta)
 cat(mle_mx,"\n",sep="",file="const_pop_mle.txt",append=TRUE)
 
 
@@ -115,17 +109,14 @@ gene_be <- coalsim(samp_times = samptv_be, n_sampled = nsampv_be,
 			traj = piecewise_exp_traj, lower_bound = 0.1,  tbreaks=c(0, 4.5, 5, 10), lnvals=c(log(0.3),log(0.45),log(.15),log(.8))  )
 
 # make tree object and write it
-tree_be <- traj2tree(gene_be)
-write.tree(tree_be,"../tree_only/data/broken_exponential.tre",digits=30)
-
-# write Revlanguage taxon file
-write.table(tree_be$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/broken_exponential.taxa.txt")
+tree_be <- generate_newick(gene_be)
+write.tree(tree_be$newick,"../tree_only/data/broken_exponential.tre",digits=10)
 
 # write grid end
 cat(gend,"\n",sep="",file="grid_ends.txt",append=TRUE)
 
 # write MLE constant-pop theta for prior specification
-mle_be <- mean(skyLine(summarize_phylo(tree_be))$theta)
+mle_be <- mean(skyLine(summarize_phylo(tree_be$newick))$theta)
 cat(mle_be,"\n",sep="",file="const_pop_mle.txt",append=TRUE)
 
 
@@ -194,16 +185,13 @@ nsampv <- c(nstart, rep(1, nsamp-nstart))
 gene <- coalsimGP(samp_times = samptv, n_sampled = nsampv, trajvec=trajGP, tvec=xseq, lower_bound=0.04)
 
 # make tree object and write it
-tree_gp <- traj2tree(gene)
-write.tree(tree_gp,"../tree_only/data/GP.tre",digits=30)
-
-# write Revlanguage taxon file
-write.table(tree_gp$Rev_taxon,quote=FALSE,col.names=c("taxon","age"),row.names=FALSE,sep=" ",file="../tree_only/data/GP.taxa.txt")
+tree_gp <- generate_newick(gene)
+write.tree(tree_gp$newick,file="../tree_only/data/GP.tre",digits=10)
 
 # write grid end
 cat(gend,"\n",sep="",file="grid_ends.txt",append=TRUE)
 
 # write MLE constant-pop theta for prior specification
-mle_gp <- mean(skyLine(summarize_phylo(tree_gp))$theta)
+mle_gp <- mean(skyLine(summarize_phylo(tree_gp$newick))$theta)
 cat(mle_gp,"\n",sep="",file="const_pop_mle.txt",append=TRUE)
 

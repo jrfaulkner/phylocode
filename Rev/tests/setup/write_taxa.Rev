@@ -1,0 +1,17 @@
+# Call Rev from /Rev/tests, filepaths are from there
+seed(42)
+
+datasets <- v("bottleneck","mex_hat","broken_exponential","GP")
+
+for (i in 1:4) {
+	
+	psi <- readTrees("tree_only/data/" + datasets[i] + ".tre")[1]
+	
+	write("taxon age\n",filename="tree_only/data/" + datasets[i] + ".taxa.txt")
+	
+	for (j in 1:psi.taxa().size()) {
+		write(psi.nodeName(j)," ",psi.nodeAge(j),"\n",append=true,filename="tree_only/data/" + datasets[i] + ".taxa.txt")
+	}
+}
+
+q()

@@ -5,12 +5,12 @@ seed(51)
 ###------------------------------
 
 ### Read in the sequence alignment
-data <- readDiscreteCharacterData("data/broken_exponential.nex")
+data <- readDiscreteCharacterData("full_model/data/broken_exponential.nex")
 
 grid_end <- 8  #this is edge of infinite grid cell
 
 ### Read in taxa
-taxa = readTaxonData("data/broken_exponential.taxa.txt"," ")
+taxa = readTaxonData("full_model/data/broken_exponential.taxa.txt"," ")
 num_taxa = taxa.size()
 
 ###-------------------------------
@@ -110,7 +110,7 @@ print("got to sub model", "\n")
 # Wrap up kappa and pi into HKY model
 Q := fnJC(4)
 
-clock_rate <- 0.03545521
+clock_rate <- 0.03757063
 
 #############
 # The Model #
@@ -125,8 +125,8 @@ mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
 mni = 0
-monitors[++mni] = mnModel(filename="output/GMRF_test_broken_exponential_2.log",printgen=10000, separator = TAB)
-monitors[++mni] = mnFile(filename="output/GMRF_test_broken_exponential_2.trees",printgen=10000, separator = TAB, psi)
+monitors[++mni] = mnModel(filename="full_model/output/GMRF_test_broken_exponential_2.log",printgen=50000, separator = TAB)
+monitors[++mni] = mnFile(filename="full_model/output/GMRF_test_broken_exponential_2.trees",printgen=50000, separator = TAB, psi)
 monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],sig)
 
 ################

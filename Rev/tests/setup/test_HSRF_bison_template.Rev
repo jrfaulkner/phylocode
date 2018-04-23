@@ -5,13 +5,13 @@ seed(THISSEED)
 ###------------------------------
 
 ### Read in the sequence alignment
-data <- readDiscreteCharacterData("data/THISALN.nex")
+data <- readDiscreteCharacterData("full_model/data/THISALN.nex")
 
 num_taxa <- data.ntaxa()
 grid_end <- THISGRID  #this is edge of infinite grid cell
 
 ### Read in taxa
-taxa = readTaxonData("data/THISALN.taxa.txt"," ")
+taxa = readTaxonData("full_model/data/THISALN.taxa.txt"," ")
 num_taxa = taxa.size()
 
 ###-------------------------------
@@ -126,8 +126,8 @@ mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
 mni = 0
-monitors[++mni] = mnModel(filename="output/HSRF_test_THISALN_THISREP.log",printgen=10000, separator = TAB)
-monitors[++mni] = mnFile(filename="output/HSRF_test_THISALN_THISREP.trees",printgen=10000, separator = TAB, psi)
+monitors[++mni] = mnModel(filename="full_model/output/HSRF_test_THISALN_THISREP.log",printgen=50000, separator = TAB)
+monitors[++mni] = mnFile(filename="full_model/output/HSRF_test_THISALN_THISREP.trees",printgen=50000, separator = TAB, psi)
 monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],gamma)
 
 ################

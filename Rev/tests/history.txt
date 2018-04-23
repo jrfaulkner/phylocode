@@ -1,0 +1,3 @@
+psi
+psi.lnProbability()
+write(psi,filename="UHOH.tre")

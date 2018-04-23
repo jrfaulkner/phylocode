@@ -4,12 +4,12 @@ seed(70)
 ##          Data 
 ###------------------------------
 
-tree <- readTrees("data/GP.tre")[1]
+tree <- readTrees("tree_only/data/GP.tre")[1]
 
 grid_end <- 12  #this is edge of infinite grid cell
 
 ### Read in taxa
-taxa = readTaxonData("data/GP.taxa.txt"," ")
+taxa = readTaxonData("tree_only/data/GP.taxa.txt"," ")
 num_taxa = taxa.size()
 
 ###-------------------------------
@@ -92,7 +92,7 @@ mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
 mni = 0
-monitors[++mni] = mnModel(filename="output/GMRF_test_fixed_tree_GP_1.log",printgen=100, separator = TAB)
+monitors[++mni] = mnModel(filename="tree_only/output/GMRF_test_fixed_tree_GP_1.log",printgen=100, separator = TAB)
 monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],sig)
 
 ################

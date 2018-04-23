@@ -1,4 +1,4 @@
-# Call Rev from /Rev, filepaths are from there
+# Call Rev from /Rev/tests, filepaths are from there
 seed(42)
 
 datasets <- v("bottleneck","mex_hat","broken_exponential","GP")
