@@ -1,3 +1,7 @@
+## NOTE: This script is meant to be sourced within Rev from the Rev/tests folder
+
+
+
 seed(THISSEED)
 
 ###------------------------------
@@ -39,19 +43,19 @@ gamma ~ dnHalfCauchy(0, 1)
 
 gamma.setValue(runif(1, 0.05, 0.5)[1])
 
-print("got past sig model", "\n")
+#print("got past sig model", "\n")
 
 
 # Prior on population size at the present (diffuse)
-zlog_Ne1 ~ dnNormal(THISMU, 1)
+zlog_Ne1 ~ dnNormal(0, 1)
 
 moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=0.2,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
 
-print("got to Ne model", "\n")
+#print("got to Ne model", "\n")
 
 # Start accumulating vector of population sizes
-
-Ne[1] := exp(10*zlog_Ne1)
+logNe[1] := THISMU + 5*zlog_Ne1
+Ne[1] := exp(zlog_Ne1)
 
 # Flesh out the population sizes with skyride model
 for (i in 1:(NUM_INTERVALS-1)) {
@@ -65,7 +69,8 @@ for (i in 1:(NUM_INTERVALS-1)) {
     delta_logNe[i] ~ dnNormal( mean=0, sd=sigma[i]*gamma*zeta )
     
     # calculate population size in interval
-    Ne[index] := Ne[i] * exp(delta_logNe[i])
+    logNe[index] := logNe[i] + delta_logNe[i]
+    Ne[index] := exp(logNe[index])
 
 }
 
@@ -77,7 +82,7 @@ moves[++mi] = mvHSRFHyperpriorsGibbs(gamma, sigma, delta_logNe, zeta, weight=0.2
 # Coalescent prior on tree #
 ############################
 
-print("got to tree model", "\n")
+#print("got to tree model", "\n")
 
 # Define our model
 psi ~ dnHeterochronousCoalescentSkyline(theta   = Ne, times   = interval_times,  method  = "specified", taxa   = taxa)
@@ -92,9 +97,10 @@ psi.clamp(tree)
 mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
+### For a single chain runs 500k burnin then 1 million thinned at every 1000, leading to 1000 samples
 mni = 0
-monitors[++mni] = mnModel(filename="tree_only/output/HSRF_test_fixed_tree_THISALN_THISREP.log",printgen=100, separator = TAB)
-monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],gamma)
+monitors[++mni] = mnModel(filename="tree_only/output/HSRF_test_fixed_tree_THISALN_THISREP.log",printgen=1000, separator = TAB)
+monitors[++mni] = mnScreen(printgen=1000,Ne[1],Ne[50],Ne[99],gamma)
 
 ################
 # The Analysis #
@@ -104,11 +110,11 @@ monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],gamma)
 mymcmc = mcmc(mymodel, monitors, moves)
 
 ### pre-burnin to tune the proposals ###
-mymcmc.burnin(generations=10000,tuningInterval=1e3)
+mymcmc.burnin(generations=500000,tuningInterval=5e2)   ## 500k burnin
 mymcmc.operatorSummary()
 
 ### run the MCMC ###
-mymcmc.run(generations=1000000)
+mymcmc.run(generations=1000000)    ## 1 million iterations
 mymcmc.operatorSummary()
 
 

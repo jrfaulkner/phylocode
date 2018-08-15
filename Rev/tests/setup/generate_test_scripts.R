@@ -1,5 +1,5 @@
-# Working directory, speciy number of copies of analyses, initial seed
-setwd("~/git_repos/jfaulkner_phylocode/Rev/")
+# NOTE:  This script is setup to be sourced from the Rev directory
+# Specify number of copies of analyses, initial seed
 n_replicate_analyses <- 2
 first_seed <- 42
 

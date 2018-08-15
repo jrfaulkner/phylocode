@@ -1,4 +1,6 @@
-setwd("~/git_repos/jfaulkner_phylocode/Rev/tests/")
+## This script is for subsetting the simulated data for the full_model analyses
+
+#setwd("~/git_repos/jfaulkner_phylocode/Rev/tests/")
 
 # Thin bottleneck
 tree <- read.tree("tree_only/data/bottleneck.tre")
@@ -26,7 +28,7 @@ tree <- drop.tip(tree,taxa$taxon[-keep])
 write.tree(tree,"full_model/data/mex_hat.tre",digits=30)
 write.table(taxa[keep,],"full_model/data/mex_hat.taxa.txt",quote=FALSE,row.names=FALSE)
 
-# Thin bottleneck
+# Thin Broken Exponential
 tree <- read.tree("tree_only/data/broken_exponential.tre")
 taxa <- read.table("tree_only/data/broken_exponential.taxa.txt",header=TRUE,stringsAsFactors=FALSE)
 
@@ -39,7 +41,7 @@ tree <- drop.tip(tree,taxa$taxon[-keep])
 write.tree(tree,"full_model/data/broken_exponential.tre",digits=30)
 write.table(taxa[keep,],"full_model/data/broken_exponential.taxa.txt",quote=FALSE,row.names=FALSE)
 
-# Thin bottleneck
+# Thin GP
 tree <- read.tree("tree_only/data/GP.tre")
 taxa <- read.table("tree_only/data/GP.taxa.txt",header=TRUE,stringsAsFactors=FALSE)
 

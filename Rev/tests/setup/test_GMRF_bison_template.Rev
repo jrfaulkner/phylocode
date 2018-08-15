@@ -1,4 +1,8 @@
+## NOTE: This script is meant to be sourced within Rev from the Rev/tests folder
+
+
 seed(THISSEED)
+
 
 ###------------------------------
 ##          Data 
@@ -47,15 +51,16 @@ sig := zsig*zeta
 
 
 # Prior on population size at the present (diffuse)
-zlog_Ne1 ~ dnNormal(THISMU, 1)
+zlog_Ne1 ~ dnNormal(0, 1)
 
-moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=2.0/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
+moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=1.7/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
 
 print("got to Ne model", "\n")
 
 # Start accumulating vector of population sizes
 
-Ne[1] := exp(10*zlog_Ne1)
+logNe[1] := THISMU + 5*zlog_Ne1
+Ne[1] := exp(zlog_Ne1)
 
 # Flesh out the population sizes with skyride model
 for (i in 1:(NUM_INTERVALS-1)) {
@@ -66,13 +71,14 @@ for (i in 1:(NUM_INTERVALS-1)) {
     delta_logNe[i] ~ dnNormal( mean=0, sd=sig )
     
     # calculate population size in interval
-    Ne[index] := Ne[i] * exp(delta_logNe[i])
+    logNe[index] := logNe[i] + delta_logNe[i]
+    Ne[index] := exp(logNe[index])
 
 }
 
 
-moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=3.0/100.0,tune=false)
-moves[++mi] = mvGMRFHyperpriorGibbs(zsig, delta_logNe, zeta, weight=2.0/100.0)
+moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=1.7/100.0,tune=false)
+moves[++mi] = mvGMRFHyperpriorGibbs(zsig, delta_logNe, zeta, weight=1.6/100.0)
 
 ############################
 # Coalescent prior on tree #
@@ -93,7 +99,7 @@ moves[++mi] = mvSubtreeScale(psi, weight=20.0/100.0)
 moves[++mi] = mvRootTimeScaleBactrian(psi, weight=4.0/100.0)
 
 # Moves on tree topology
-total_tree_weight_BEAST = 29
+total_tree_weight_BEAST = 28
 moves[++mi] = mvNarrow(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
 moves[++mi] = mvNNI(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
 moves[++mi] = mvFNPR(psi, weight=168.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
@@ -125,9 +131,9 @@ mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
 mni = 0
-monitors[++mni] = mnModel(filename="full_model/output/GMRF_test_THISALN_THISREP.log",printgen=50000, separator = TAB)
-monitors[++mni] = mnFile(filename="full_model/output/GMRF_test_THISALN_THISREP.trees",printgen=50000, separator = TAB, psi)
-monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],sig)
+monitors[++mni] = mnModel(filename="full_model/output/GMRF_test_THISALN_THISREP.log",printgen=64000, separator = TAB)
+monitors[++mni] = mnFile(filename="full_model/output/GMRF_test_THISALN_THISREP.trees",printgen=64000, separator = TAB, psi)
+monitors[++mni] = mnScreen(printgen=64000,Ne[1],Ne[50],Ne[99],sig)
 
 ################
 # The Analysis #
@@ -137,11 +143,11 @@ monitors[++mni] = mnScreen(printgen=10000,Ne[1],Ne[50],Ne[99],sig)
 mymcmc = mcmc(mymodel, monitors, moves)
 
 ### pre-burnin to tune the proposals ###
-mymcmc.burnin(generations=5000000,tuningInterval=1e5)
+mymcmc.burnin(generations=1000000,tuningInterval=1e4)
 mymcmc.operatorSummary()
 
 ### run the MCMC ###
-mymcmc.run(generations=50000000)
+mymcmc.run(generations=160000000)  #160 million
 mymcmc.operatorSummary()
 
 
