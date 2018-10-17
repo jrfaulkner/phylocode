@@ -2,7 +2,7 @@ This folder contains everything needed to run RevBayes analyses of the 2013 biso
 
 For stability, these can all be run with the development branch of the fork of Rev available at: https://github.com/afmagee/revbayes/
 
-#Installation of the fork of Revbayes
+# Installation of the fork of Revbayes
 
 Installing RevBayes on linux/Mac requires Cmake and a C++ compiler. With these in place, the process should be as easy as:
     
@@ -11,16 +11,16 @@ Installing RevBayes on linux/Mac requires Cmake and a C++ compiler. With these i
 
 There are further instructions available [here](http://revbayes.github.io/software.html) for linux/Mac, and in revbayes/projects/RevBayes\_Win\_Installation\_Instruction.txt for windows users. If using these instructions, be sure to clone from https://github.com/afmagee/revbayes.git and not https://github.com/revbayes/revbayes.git.
 
-#Running analyses
+# Running analyses
 
 To run any tests or analyses, Rev should be compiled from this source, and called from the top level of /analyses or /tests as appropriate.
 
-###Running analyses of Bison data
+### Running analyses of Bison data
     
     1. Generate analysis scripts by opening R in the Rev folder and sourcing "/analyses/setup/generate_analysis_scripts.R". The number of replicates and seed are set here
     2. Call RevBayes from Rev/analyses on the scripts in Rev/analyses/src, output will be printed to Rev/analyses/output
     
-###Running analyses of simulated data
+### Running analyses of simulated data
 There are two sets of analyses here, fixed-tree analyses of only the coalescent model (in /tree\_only) and joint analyses (coalescent model and tree, in /full\_model).
 Start by generating the necessary scripts for Rev then source the scripts in Rev:
 
@@ -36,7 +36,7 @@ Note that the following steps were already taken to produce the necessary data f
     4. Simulated alignments on subsampled trees to test joint inference (Rev/tests/setup/sim_seqs.Rev)
 
 
-#File structure
+# File structure
     
     /analyses contains the requisite scripts and files for analyzing the data
     

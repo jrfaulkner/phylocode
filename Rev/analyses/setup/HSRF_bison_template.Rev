@@ -169,8 +169,7 @@ mymodel = model(Ne)
 ### Run 80 million iterations thinned at every 64 thousand, which gives 1250 samples to keep for this chain (run 4 chains)
 ## Start with 1 million of burnin
 mni = 0
-monitors[++mni] = mnModel(filename="output/bison_horseshoe_skygrid_fixed_clock_THISREP.log",printgen=64000, separator = TAB, 
-			zlog_Ne1, delta_logNe, logNe, sigma, gamma, gamma_cats, gamma_shape, kappa,pi,  RA, TL)
+monitors[++mni] = mnModel(filename="output/bison_horseshoe_skygrid_fixed_clock_THISREP.log",printgen=64000, separator = TAB)
 monitors[++mni] = mnFile(filename="output/bison_horseshoe_skygrid_THISREP.trees",printgen=64000, separator = TAB, psi)
 monitors[++mni] = mnScreen(printgen=64000,logNe[1], logNe[50], logNe[99],gamma)
 

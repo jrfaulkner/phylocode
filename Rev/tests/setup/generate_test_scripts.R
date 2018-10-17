@@ -16,6 +16,7 @@ GMRF_template <- readLines("tests/setup/test_GMRF_bison_template.Rev")
 HSRF_template <- readLines("tests/setup/test_HSRF_bison_template.Rev")
 
 seed <- first_seed
+dir.create("tests/full_model/src", recursive=TRUE, showWarnings=FALSE)
 
 for (d in 1:4) {
   DS <- datasets[d]
@@ -50,6 +51,8 @@ for (d in 1:4) {
 
 GMRF_template <- readLines("tests/setup/test_GMRF_tree_only_template.Rev")
 HSRF_template <- readLines("tests/setup/test_HSRF_tree_only_template.Rev")
+
+dir.create("tests/tree_only/src", recursive=TRUE, showWarnings=FALSE)
 
 for (d in 1:4) {
   DS <- datasets[d]
