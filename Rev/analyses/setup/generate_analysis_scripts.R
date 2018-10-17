@@ -7,6 +7,7 @@ GMRF_template <- readLines("analyses/setup/GMRF_bison_template.Rev")
 HSRF_template <- readLines("analyses/setup/HSRF_bison_template.Rev")
 
 seed <- first_seed
+dir.create("analyses/src", recursive=TRUE, showWarnings=FALSE)
 
 # Generate GMRF analysis files
 for (i in 1:n_replicate_analyses) {
