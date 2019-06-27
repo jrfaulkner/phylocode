@@ -1,0 +1,174 @@
+seed(THISSEED)
+
+
+###------------------------------
+##          Data 
+###------------------------------
+
+### Read in the sequence alignment
+data <- readDiscreteCharacterData("data/hcv2.nex")
+
+### Read in taxa
+taxa = readTaxonData("data/hcv_taxon.txt")
+
+tnames =  v("AF271825", "AF271826", "AF271827", "AF271828", "AF271829", "AF271830", "AF271831", "AF271832", "AF271833", "AF271834", "AF271835", "AF271836", "AF271837", "AF271838", "AF271839","AF271840", "AF271841", "AF271842", "AF271843", "AF271844", "AF271845", "AF271846", "AF271847", "AF271848", "AF271849", "AF271850", "AF271851", "AF271852", "AF271853", "AF271854", "AF271855", "AF271856", "AF271857", "AF271858", "AF271859", "AF271860", "AF271861", "AF271862", "AF271863", "AF271864", "AF271865", "AF271866", "AF271867", "AF271868", "AF271869", "AF271870", "AF271871", "AF271872", "AF271873", "AF271874", "AF271875", "AF271876", "AF271877", "AF271878", "AF271879", "AF271880", "AF271881", "AF271882", "AF271883", "AF271884", "AF271885", "AF271886", "AF271887")
+
+
+
+###-------------------------------
+##          Set Grid    
+###-------------------------------
+
+# set my move index
+mi = 0
+
+# define number of population sizes through time
+NUM_INTERVALS = 99 + 1      #make 100 grid cells total
+NIM1 = NUM_INTERVALS - 1
+
+# Define the boundary X of last grid cell as so Pr(tmrca < X) = 0.001. 
+# the population size from the last change point to infinity will be the same
+grid_bound = 227
+
+# Chop up duration from root to present into equally sized intervals
+interval_times <- grid_bound * seq(1, NIM1, 1)/NIM1
+
+
+
+######################################
+# Define population sizes and priors #
+######################################
+
+
+zeta <- 0.001  #based on 100 cells order-2 and p = 0.05
+
+zgam ~ dnHalfCauchy(0, 1)
+
+zgam.setValue(runif(1, 0.05, 0.5)[1])
+
+# Prior on population size at the present (diffuse)
+zlog_Ne1 ~ dnNormal(0, 1)
+
+zlog_Ne1.setValue(rnorm(1,0,.1)[1])
+
+moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=1.7/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
+
+
+logNe1 := 7.8 + 5*zlog_Ne1
+
+ztau[1] ~ dnHalfCauchy(0,1)
+
+s1_2 <- sqrt(1/2)
+
+delta_logNe[1] ~ dnNormal( mean=0, sd=s1_2*zgam*zeta*ztau[1] )
+
+# Specify population size prior 
+for (i in 1:(NUM_INTERVALS-2)) {
+ ztau[i+1] ~ dnHalfCauchy(0, 1)
+ delta_logNe[i+1] ~ dnNormal(mean=0, sd=zeta*zgam*ztau[i+1])
+}
+
+Ne := fnassembleContinuousMRF(initialValue=logNe1,increments=delta_logNe,initialValueIsLogScale=true,order=2)
+
+moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=1.7/100.0,tune=false)
+moves[++mi] = mvHSRFHyperpriorsGibbs(zgam,ztau,delta_logNe,zeta,order=2,weight=1.6/100.0)
+
+
+
+############################
+# Coalescent prior on tree #
+############################
+
+
+# Define our model
+psi ~ dnCoalescentSkyline(theta   = Ne, times   = interval_times,  method  = "specified", taxa = taxa) 
+
+
+## Tree proposals
+# Moves on node times (excluding root height)
+moves[++mi] = mvNodeTimeSlideUniform(psi, weight=20.0/100.0)
+moves[++mi] = mvNodeTimeScale(psi, weight=20.0/100.0)
+moves[++mi] = mvSubtreeScale(psi, weight=20.0/100.0)
+
+# Moves on root height
+moves[++mi] = mvRootTimeScaleBactrian(psi, weight=4.0/100.0)
+
+# Moves on tree topology
+total_tree_weight_BEAST = 28
+moves[++mi] = mvNarrow(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
+moves[++mi] = mvNNI(psi, weight=9.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
+moves[++mi] = mvFNPR(psi, weight=168.0/(9.0+9.0+168.0)*total_tree_weight_BEAST/100.0)
+
+
+TL := psi.treeLength()
+RA := psi.rootAge()
+
+######################
+# Substitution model #
+######################
+
+print("got to sub model", "\n")
+
+# Prior on kappa
+kappa ~ dnGamma(shape=10,rate=1/3)
+moves[++mi] = mvScaleBactrian(kappa, weight=1.0/100.0, lambda=1.0, tune=true, tuneTarget=0.44)
+
+# Prior on stationary frequencies
+pi ~ dnDirichlet(v(1,1,1,1))
+moves[++mi] = mvBetaSimplex(pi, weight=0.75/100.0, alpha=1, tune=true)
+moves[++mi] = mvDirichletSimplex(pi, alpha=1, weight=0.25/100.0, tune=true) 
+
+# Wrap up kappa and pi into HKY model
+Q := fnHKY(kappa, pi)
+
+
+clock_rate = 0.00079
+
+# Gamma-distributed rate heterogeneity
+# Prior on shape
+gamma_shape ~ dnExponential(2)
+moves[++mi] = mvScaleBactrian(gamma_shape, weight=1.0/100.0, lambda=1.0, tune=true, tuneTarget=0.44)
+
+gamma_cats := fnDiscretizeGamma(gamma_shape, gamma_shape, 4)
+
+# Invariant sites (169 of them)
+pinvar ~ dnBeta(1,1)
+moves[++mi] = mvSlide(pinvar)
+
+
+#############
+# The Model #
+#############
+
+seq ~ dnPhyloCTMC(tree=psi, Q=Q, branchRates=clock_rate, pInv=pinvar, siteRates = gamma_cats, nSites=data.nchar())
+
+seq.clamp(data)
+
+### workspace model wrapper ###
+mymodel = model(Ne)
+
+### set up the monitors that will output parameter values to file and screen 
+mni = 0
+monitors[++mni] = mnModel(filename="output/hcv_hsmrf_2_chain_THISREP.log", printgen=20000, separator = TAB)
+monitors[++mni] = mnFile(filename="output/hcv_hsmrf_2_chain_THISREP.trees",printgen=20000, separator = TAB, psi)
+monitors[++mni] = mnScreen(printgen=20000, logNe1, zgam, kappa, gamma_shape ,  TL)
+
+################
+# The Analysis #
+################
+
+### workspace mcmc ###
+mymcmc = mcmc(mymodel, monitors, moves)
+
+### pre-burnin to tune the proposals ###
+mymcmc.burnin(generations=1000000,tuningInterval=1000)
+mymcmc.operatorSummary()
+
+### run the MCMC ###
+mymcmc.run(generations=25000000)   #25 M / 20k = 1250 post samples 
+mymcmc.operatorSummary()
+
+
+
+
+

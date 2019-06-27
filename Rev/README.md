@@ -17,9 +17,14 @@ To run any tests or analyses, Rev should be compiled from this source, and calle
 
 ### Running analyses of Bison data
     
-    1. Generate analysis scripts by opening R in the Rev folder and sourcing "/analyses/setup/generate_analysis_scripts.R". The number of replicates and seed are set here
-    2. Call RevBayes from Rev/analyses on the scripts in Rev/analyses/src, output will be printed to Rev/analyses/output
+    1. Generate analysis scripts by opening R in the Rev folder and sourcing "/analyses/setup/generate_bison_analysis_scripts.R". The number of replicates and seed are set here
+    2. Call RevBayes from Rev/analyses on the scripts in Rev/analyses/bison/src, output will be printed to Rev/analyses/output
+
+### Running analyses of HCV data
     
+    1. Generate analysis scripts by opening R in the Rev folder and sourcing "/analyses/setup/generate_hcv_analysis_scripts.R". The number of replicates and seed are set here
+    2. Call RevBayes from Rev/analyses on the scripts in Rev/analyses/hcv/src, output will be printed to Rev/analyses/output
+     
 ### Running analyses of simulated data
 There are two sets of analyses here, fixed-tree analyses of only the coalescent model (in /tree\_only) and joint analyses (coalescent model and tree, in /full\_model).
 Start by generating the necessary scripts for Rev then source the scripts in Rev:

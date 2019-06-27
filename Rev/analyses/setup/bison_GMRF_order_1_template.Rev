@@ -1,4 +1,4 @@
-seed(THISSEED)
+seed(THISSEED)  #342, 343, 344, 345
 
 # The BEAST script has a total move weight of 75, distributed as
 # 30 = 40%   pure node height
@@ -28,7 +28,9 @@ seed(THISSEED)
 data <- readDiscreteCharacterData("data/bison_2013.nexus")
 
 num_taxa <- data.ntaxa()
-root_height <- 150000  #this is edge of infinite grid cell -- shapiro paper est 136k (111k to 164k)
+# Define the boundary X of last grid cell as so Pr(tmrca < X) = 0.001. 
+# the population size from the last change point to infinity will be the same
+grid_bound = 100000
 
 ### Read in taxa
 taxa = readTaxonData("data/bison_2013_taxa.txt"," ")
@@ -45,60 +47,50 @@ mi = 0
 miud = 0
 
 # define number of population sizes through time
-NUM_INTERVALS = 99 + 1
+NUM_INTERVALS = 120
 NIM1 = NUM_INTERVALS - 1
 
 # Chop up duration from root to present into equally sized intervals
-interval_times <- root_height * seq(1, NIM1, 1)/NIM1
+interval_times <- grid_bound * seq(1, NIM1, 1)/NIM1
 
 ######################################
 # Define population sizes and priors #
 ######################################
 
 
-zeta <- 0.005
-zsig ~ dnHalfCauchy(0, 1)
+zeta <- 0.021    #from fixed tree 120 cells and p=0.05
+zgam ~ dnHalfCauchy(0, 1)
 
-zsig.setValue(runif(1, 0.05, 0.5)[1])
+zgam.setValue(runif(1, 0.05, 0.5)[1])
 
-#print("got past sig model", "\n")
-
-
-sig := zsig*zeta
-
-
-# Prior on population size at the present (diffuse)
+# Prior on population size at the present 
 zlog_Ne1 ~ dnNormal(0, 1)
 
 zlog_Ne1.setValue(rnorm(1,0,.1)[1])
 
 moves[++mi] = mvSlideBactrian(zlog_Ne1,weight=1.7/100.0,sigma=1.0,tune=true) # RevBayes targets an acceptance of ~44% when autotuning by default, we can change this as we desire, as in this parameter where sampling has a lot of trouble
 
-#print("got to Ne model", "\n")
 
 # Start accumulating vector of population sizes
 
-logNe[1] := 10.7 + 5*zlog_Ne1
-Ne[1] := exp(logNe[1])
+logNe1 := 10.7 + 5*zlog_Ne1
 
-# Flesh out the population sizes with skyride model
+# model for change in log population size 
 for (i in 1:(NUM_INTERVALS-1)) {
     index = i+1
     
     # specify normal priors on the difference between sequential population sizes
     # we use a non-centered parameterization
-    delta_logNe[i] ~ dnNormal( mean=0, sd=sig )
+    delta_logNe[i] ~ dnNormal(mean=0, sd=zgam*zeta )
     
-    # calculate population size in interval
-    logNe[index] := logNe[i] + delta_logNe[i]
-    Ne[index] := exp(logNe[index])
-
 }
+
+# calculate populations sizes
+Ne := fnassembleContinuousMRF(initialValue=logNe1,increments=delta_logNe,initialValueIsLogScale=true,order=1)
 
 
 moves[++mi] = mvEllipticalSliceSamplingSimple(delta_logNe,weight=1.7/100.0,tune=false)
-moves[++mi] = mvGMRFHyperpriorGibbs(zsig, delta_logNe, zeta, weight=1.6/100.0)
-
+moves[++mi] = mvGMRFHyperpriorGibbs(zgam, delta_logNe, zeta, order=1, weight=1.6/100.0)
 
 
 
@@ -106,10 +98,10 @@ moves[++mi] = mvGMRFHyperpriorGibbs(zsig, delta_logNe, zeta, weight=1.6/100.0)
 # Coalescent prior on tree #
 ############################
 
-#print("got to tree model", "\n")
+print("got to tree model", "\n")
 
 # Define our model
-psi ~ dnHeterochronousCoalescentSkyline(theta   = Ne, times   = interval_times,  method  = "specified", taxa   = taxa)
+psi ~ dnHeterochronousCoalescentSkyline(theta  = Ne, times   = interval_times,  method  = "specified", taxa   = taxa)
 
 ## Tree proposals
 # Moves on node times (excluding root height)
@@ -133,7 +125,7 @@ RA := psi.rootAge()
 # Substitution model #
 ######################
 
-#print("got to sub model", "\n")
+print("got to sub model", "\n")
 
 # Prior on kappa
 kappa ~ dnGamma(shape=10,rate=1/3)
@@ -169,12 +161,11 @@ seq.clamp(data)
 mymodel = model(Ne)
 
 ### set up the monitors that will output parameter values to file and screen 
-### Run 80 million iterations thinned at every 64 thousand, which gives 1250 samples to keep for this chain (run 4 chains)
-## Start with 1 million of burnin
 mni = 0
-monitors[++mni] = mnModel(filename="output/bison_skygrid_fixed_clock_THISREP.log",printgen=64000, separator = TAB)
-monitors[++mni] = mnFile(filename="output/bison_skygrid_THISREP.trees",printgen=64000, separator = TAB, psi)
-monitors[++mni] = mnScreen(printgen=64000, logNe[1],logNe[50],logNe[99],sig)
+monitors[++mni] = mnModel(filename="output/bison_gmrf_1_chain_THISREP.log",printgen=64000, separator = TAB)
+monitors[++mni] = mnFile(filename="output/bison_gmrf_1_chain_THISREP.trees",printgen=64000, separator = TAB, psi)
+monitors[++mni] = mnScreen(printgen=64000, zlog_Ne1, zgam, gamma_shape)
+
 
 ################
 # The Analysis #
@@ -184,7 +175,7 @@ monitors[++mni] = mnScreen(printgen=64000, logNe[1],logNe[50],logNe[99],sig)
 mymcmc = mcmc(mymodel, monitors, moves)
 
 ### pre-burnin to tune the proposals ###
-mymcmc.burnin(generations=1000000,tuningInterval=1e4) # 1 million, or 10% of the length of the chain we want
+mymcmc.burnin(generations=1000000,tuningInterval=1e4) #1 million, or 10% of the length of the chain we want
 mymcmc.operatorSummary()
 
 ### run the MCMC ###
@@ -194,4 +185,4 @@ mymcmc.operatorSummary()
 
 
 ## quit ##
-q()
+#q()
